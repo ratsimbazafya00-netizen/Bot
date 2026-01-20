@@ -13,7 +13,7 @@ GITHUB_USER = "ratsimbazafya00-netizen"
 REPO_NAME = "Bot"
 BRANCH = "main"
 
-LOCAL_VERSION = "1.0.0"
+LOCAL_VERSION = "1.1.0"
 
 # ================= URLS =================
 def version_url():
@@ -135,3 +135,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+
