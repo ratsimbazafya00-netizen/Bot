@@ -20,10 +20,8 @@ LOADER_VERSION = "1.1.0"
 LOCAL_VERSION  = "1.1.0"
 
 # ================= CRYPTO =================
-SECRET_B64 = "YTkxZjNjOWUwZjhjMWIyZC4uLg=="
-
-KEY = hashlib.sha256(base64.b64decode(SECRET_B64)).digest()  # 32 bytes
-IV  = b"SMMKINGDOM_16_IV"                                   # 16 bytes
+KEY = base64.b64decode("YTkxZjNjOWUwZjhjMWIyZC4uLg==")  # 32 bytes AES
+IV  = b"SMMKINGDOM_16_IV"                               # 16 bytes AES
 
 # ================= URLS =================
 def version_url():
@@ -120,33 +118,16 @@ def check_update():
     return True
 
 # ================= RUN ENCRYPTED =================
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
-import base64
-import hashlib
-
-SECRET_B64 = "YTkxZjNjOWUwZjhjMWIyZC4uLg=="
-
-KEY = hashlib.sha256(base64.b64decode(SECRET_B64)).digest()  # 32 bytes
-IV  = b"SMMKINGDOM_16_IV"                                   # 16 bytes
-
-
 def run_encrypted():
     with open("smmkingdom.enc", "rb") as f:
-        encrypted_b64 = f.read()
-
-    # 🔴 ÉTAPE MANQUANTE AVANT
-    encrypted = base64.b64decode(encrypted_b64)
+        encrypted = base64.b64decode(f.read())
 
     cipher = AES.new(KEY, AES.MODE_CBC, IV)
     decrypted = unpad(cipher.decrypt(encrypted), AES.block_size)
 
     code = decrypted.decode("utf-8")
 
-    exec(code, {
-        "__name__": "__main__"
-    })
-
+    exec(code, {"__name__": "__main__"})
 
 # ================= MAIN =================
 def run():
