@@ -8,6 +8,8 @@ import sys
 import base64
 import tempfile
 import urllib.request
+import shutil
+
 
 GITHUB_USER = "ratsimbazafya00-netizen"
 REPO_NAME = "Bot"
@@ -18,19 +20,8 @@ LOCAL_VERSION = "1.0.0"
 def version_url():
     return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/version.json"
 
-
-# ================= LICENCE =================
-def license_url(machine_id):
-    return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/licenses/{machine_id}.json"
-
-def load_remote_version():
-    try:
-        with urllib.request.urlopen(version_url(), timeout=10) as r:
-            data = r.read().decode("utf-8")
-            return json.loads(data)
-    except:
-        return None
-
+def update_file_url():
+    return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/update/smmkingdom.enc"
 def check_update():
     print("🔎 Vérification des mises à jour...")
 
@@ -55,10 +46,50 @@ def check_update():
 
     if mandatory:
         print("⛔ Mise à jour OBLIGATOIRE")
+
+        ok = download_update()
+        if not ok:
+            print("❌ Mise à jour impossible")
+            return False
+
+        print("🔄 Relance du programme requise")
+        return True
+
+def download_update():
+    print("⬇️ Téléchargement de la mise à jour...")
+
+    url = update_file_url()
+    temp_file = "smmkingdom.enc.new"
+
+    try:
+        with urllib.request.urlopen(url, timeout=30) as response:
+            with open(temp_file, "wb") as out:
+                shutil.copyfileobj(response, out)
+
+        # Remplacer l'ancien fichier
+        if os.path.exists("smmkingdom.enc"):
+            os.remove("smmkingdom.enc")
+
+        os.rename(temp_file, "smmkingdom.enc")
+
+        print("✔ Mise à jour installée avec succès")
+        return True
+
+    except Exception as e:
+        print("❌ Échec mise à jour :", e)
         return False
 
-    print("⚠️ Mise à jour facultative")
-    return True
+# ================= LICENCE =================
+def license_url(machine_id):
+    return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/licenses/{machine_id}.json"
+
+def load_remote_version():
+    try:
+        with urllib.request.urlopen(version_url(), timeout=10) as r:
+            data = r.read().decode("utf-8")
+            return json.loads(data)
+    except:
+        return None
 
 def load_remote_license(machine_id):
     url = license_url(machine_id)
@@ -139,3 +170,9 @@ def run():
 
 if __name__ == "__main__":
     run()
+    if not os.path.exists("smmkingdom.enc"):
+        print("⚠️ Fichier principal manquant → téléchargement")
+        if not download_update():
+            sys.exit(1)
+    print("🚀 Lancement SMMKINGDOM...")
+    os.system("python smmkingdom.enc")
