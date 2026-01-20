@@ -1,6 +1,5 @@
 print(">>> LOADER DÉMARRÉ <<<", flush=True)
 
-
 import json
 import time
 import hashlib
@@ -9,12 +8,12 @@ import sys
 import urllib.request
 import shutil
 
-# ================= CONFIG GITHUB =================
+# ================= CONFIG =================
 GITHUB_USER = "ratsimbazafya00-netizen"
 REPO_NAME = "Bot"
 BRANCH = "main"
-LOADER_VERSION = "1.1.0"
 
+LOADER_VERSION = "1.1.0"
 LOCAL_VERSION = "1.1.0"
 
 # ================= URLS =================
@@ -35,13 +34,11 @@ def get_machine_id():
 def show_machine_id(machine_id):
     print("\n" + "=" * 60)
     print("🖥 IDENTIFIANT UNIQUE DE CETTE MACHINE")
-    print("-" * 60)
     print(machine_id)
-    print("-" * 60)
     print("📩 Envoyez cet ID à votre fournisseur")
     print("=" * 60 + "\n")
 
-# ================= LOAD REMOTE =================
+# ================= REMOTE LOAD =================
 def load_remote_version():
     try:
         with urllib.request.urlopen(version_url(), timeout=10) as r:
@@ -68,21 +65,21 @@ def download_update():
             os.remove("smmkingdom.enc")
 
         os.rename("smmkingdom.enc.new", "smmkingdom.enc")
-        print("✔ Mise à jour installée")
+        print("✔ Mise à jour bot installée")
         return True
     except Exception as e:
         print("❌ Erreur mise à jour :", e)
         return False
 
-# ================= LICENSE CHECK =================
+# ================= LICENCE =================
 def check_license():
     print("🔍 Vérification licence...")
     machine_id = get_machine_id()
-    show_machine_id(machine_id)
 
     lic = load_remote_license(machine_id)
 
     if not lic:
+        show_machine_id(machine_id)
         print("❌ Aucune licence trouvée")
         sys.exit(1)
 
@@ -96,57 +93,36 @@ def check_license():
 
     print("✔ LICENCE VALIDE")
 
-# ================= VERSION CHECK =================
+# ================= VERSION =================
 def check_update():
     print("🔎 Vérification des mises à jour...")
 
     remote = load_remote_version()
-
     if not remote:
         print("⚠️ Impossible de vérifier les mises à jour")
         return True
 
-    remote_version = remote.get("version")
-    remote_loader_version = remote.get("loader_version")
-    mandatory = remote.get("mandatory", False)
-    message = remote.get("message", "")
-
-    # 🔒 MISE À JOUR DU LOADER
-    if remote_loader_version and remote_loader_version != LOADER_VERSION:
+    # 🔒 Loader
+    if remote.get("loader_version") != LOADER_VERSION:
         print("⛔ Mise à jour du loader requise")
-        print(f"📦 Loader local : {LOADER_VERSION}")
-        print(f"📦 Loader distant : {remote_loader_version}")
-        print("➡️ Lancement de la mise à jour...")
-        os.system("python update_loader.py")
+        print("➡️ Relancez après mise à jour")
         sys.exit(0)
 
-    # 🔄 MISE À JOUR DU BOT
-    if remote_version == LOCAL_VERSION:
-        print("✔ Version du bot à jour")
+    # 🔄 Bot
+    if remote.get("version") == LOCAL_VERSION:
+        print("✔ Version à jour")
         return True
 
-    print("\n🆕 NOUVELLE VERSION DISPONIBLE")
-    print("📦 Version actuelle :", LOCAL_VERSION)
-    print("📦 Dernière version :", remote_version)
-    print("📝", message)
-
-    if mandatory:
-        print("⛔ Mise à jour OBLIGATOIRE")
-
-        if not download_update():
-            print("❌ Mise à jour impossible")
-            return False
-
-        print("✔ Mise à jour installée")
-        print("🔄 Relance requise")
-        return True
+    if remote.get("mandatory"):
+        print("⛔ Mise à jour obligatoire")
+        return download_update()
 
     return True
-
 
 # ================= RUN =================
 def run():
     check_license()
+
     if not check_update():
         sys.exit(1)
 
@@ -160,7 +136,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
-
-
-
