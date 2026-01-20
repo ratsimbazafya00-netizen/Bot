@@ -1,5 +1,6 @@
 {
-  "version": "1.0.0",
-  "force_update": false,
-  "message": "Version stable"
+  "version": "1.0.1",
+  "mandatory": true,
+  "message": "Nouvelle version disponible - amélioration stabilité"
 }
+
