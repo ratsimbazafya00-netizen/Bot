@@ -101,30 +101,48 @@ def check_update():
     print("🔎 Vérification des mises à jour...")
 
     remote = load_remote_version()
+
     if not remote:
-        print("⚠️ Impossible de vérifier la version")
+        print("⚠️ Impossible de vérifier les mises à jour")
         return True
-
-    # ===== ÉTAPE 3 : UPDATE LOADER =====
-    remote_loader_version = remote.get("loader_version")
-
-        if remote_loader_version and remote_loader_version != LOADER_VERSION:
-            print("⛔ Mise à jour du loader requise")
-            print(f"📦 Version locale : {LOADER_VERSION}")
-            print(f"📦 Nouvelle version : {remote_loader_version}")
-            print("➡️ Mise à jour en cours...")
-            os.system("python update_loader.py")
-            sys.exit(0)
-
 
     remote_version = remote.get("version")
+    remote_loader_version = remote.get("loader_version")
+    mandatory = remote.get("mandatory", False)
+    message = remote.get("message", "")
 
+    # 🔒 MISE À JOUR DU LOADER
+    if remote_loader_version and remote_loader_version != LOADER_VERSION:
+        print("⛔ Mise à jour du loader requise")
+        print(f"📦 Loader local : {LOADER_VERSION}")
+        print(f"📦 Loader distant : {remote_loader_version}")
+        print("➡️ Lancement de la mise à jour...")
+        os.system("python update_loader.py")
+        sys.exit(0)
+
+    # 🔄 MISE À JOUR DU BOT
     if remote_version == LOCAL_VERSION:
-        print("✔ Version à jour")
+        print("✔ Version du bot à jour")
         return True
 
-    print("🆕 Nouvelle version du bot disponible")
-    return download_update()
+    print("\n🆕 NOUVELLE VERSION DISPONIBLE")
+    print("📦 Version actuelle :", LOCAL_VERSION)
+    print("📦 Dernière version :", remote_version)
+    print("📝", message)
+
+    if mandatory:
+        print("⛔ Mise à jour OBLIGATOIRE")
+
+        if not download_update():
+            print("❌ Mise à jour impossible")
+            return False
+
+        print("✔ Mise à jour installée")
+        print("🔄 Relance requise")
+        return True
+
+    return True
+
 
 # ================= RUN =================
 def run():
@@ -142,6 +160,7 @@ def run():
 
 if __name__ == "__main__":
     run()
+
 
 
 
