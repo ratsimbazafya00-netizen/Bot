@@ -12,10 +12,53 @@ import urllib.request
 GITHUB_USER = "ratsimbazafya00-netizen"
 REPO_NAME = "Bot"
 BRANCH = "main"
+LOCAL_VERSION = "1.0.0"
 
+# ================= VERSION =================
+def version_url():
+    return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/version.json"
+
+
+# ================= LICENCE =================
 def license_url(machine_id):
     return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/licenses/{machine_id}.json"
 
+def load_remote_version():
+    try:
+        with urllib.request.urlopen(version_url(), timeout=10) as r:
+            data = r.read().decode("utf-8")
+            return json.loads(data)
+    except:
+        return None
+
+def check_update():
+    print("🔎 Vérification des mises à jour...")
+
+    remote = load_remote_version()
+
+    if not remote:
+        print("⚠️ Impossible de vérifier les mises à jour")
+        return True
+
+    remote_version = remote.get("version")
+    mandatory = remote.get("mandatory", False)
+    message = remote.get("message", "")
+
+    if remote_version == LOCAL_VERSION:
+        print("✔ Version à jour")
+        return True
+
+    print("\n🆕 NOUVELLE VERSION DISPONIBLE")
+    print("📦 Version actuelle :", LOCAL_VERSION)
+    print("📦 Dernière version :", remote_version)
+    print("📝", message)
+
+    if mandatory:
+        print("⛔ Mise à jour OBLIGATOIRE")
+        return False
+
+    print("⚠️ Mise à jour facultative")
+    return True
 
 def load_remote_license(machine_id):
     url = license_url(machine_id)
@@ -84,7 +127,13 @@ def check_license():
 # ================= RUN =================
 def run():
     check_license()
+
+    if not check_update():
+        print("⛔ Veuillez mettre à jour le programme")
+        sys.exit(1)
+
     print("🚀 Accès autorisé")
+
 
 
 
