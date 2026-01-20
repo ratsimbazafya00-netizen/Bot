@@ -19,9 +19,11 @@ BRANCH = "main"
 LOADER_VERSION = "1.1.0"
 LOCAL_VERSION  = "1.1.0"
 
-# ================= CRYPTO =================
-KEY = base64.b64decode("YTkxZjNjOWUwZjhjMWIyZC4uLg==")  # 32 bytes AES
-IV  = b"SMMKINGDOM_16_IV"                               # 16 bytes AES
+# ================= CRYPTO (SEULEMENT KEY) =================
+SECRET_B64 = "YTkxZjNjOWUwZjhjMWIyZC4uLg=="
+
+# 🔑 clé AES 32 bytes EXACT (obligatoire)
+KEY = hashlib.sha256(base64.b64decode(SECRET_B64)).digest()
 
 # ================= URLS =================
 def version_url():
@@ -117,12 +119,14 @@ def check_update():
 
     return True
 
-# ================= RUN ENCRYPTED =================
+# ================= RUN ENCRYPTED (SANS IV) =================
 def run_encrypted():
     with open("smmkingdom.enc", "rb") as f:
-        encrypted = base64.b64decode(f.read())
+        encrypted_b64 = f.read()
 
-    cipher = AES.new(KEY, AES.MODE_CBC, IV)
+    encrypted = base64.b64decode(encrypted_b64)
+
+    cipher = AES.new(KEY, AES.MODE_ECB)
     decrypted = unpad(cipher.decrypt(encrypted), AES.block_size)
 
     code = decrypted.decode("utf-8")
