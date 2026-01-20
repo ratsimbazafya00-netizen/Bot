@@ -94,6 +94,11 @@ def check_update():
     if data.get("mandatory"):
         print("⬇️ Mise à jour obligatoire...")
         return download_update()
+    if data.get("loader_update"):
+        print("⛔ Mise à jour du loader requise")
+        print("➡️ Lancement de la mise à jour...")
+        os.system("python update_loader.py")
+        sys.exit(0)
 
     return True
 
