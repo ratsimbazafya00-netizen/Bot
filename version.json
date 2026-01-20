@@ -1,7 +1,7 @@
 {
-  "version": "1.1.0",
-  "loader_version": "1.1.0",
-  "mandatory": false,
+  "version": "1.1.1",
+  "loader_version": "1.1.1",
+  "mandatory": true,
   "message": "Version stable"
 }
 
