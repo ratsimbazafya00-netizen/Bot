@@ -1,73 +1,87 @@
 print(">>> LOADER DÉMARRÉ <<<", flush=True)
 
-import json, time, hashlib, os, sys, urllib.request, shutil, base64
-from Crypto.Cipher import AES
+import json
+import time
+import hashlib
+import os
+import sys
+import urllib.request
+import shutil
 
-# ================= CONFIG =================
+# ================= CONFIG GITHUB =================
 GITHUB_USER = "ratsimbazafya00-netizen"
 REPO_NAME = "Bot"
 BRANCH = "main"
+
 LOCAL_VERSION = "1.0.0"
-
-SECRET = b"YTkxZjNjOWUwZjhjMWIyZC4uLg=="
-
-ENC_FILE = "smmkingdom.enc"
-EXPECTED_FILES = {"loader.py", "smmkingdom.enc"}
-
-# ================= ANTI DEBUG =================
-def anti_debug():
-    if sys.gettrace():
-        print("⛔ Debug détecté")
-        sys.exit(1)
-
-    for m in ("pdb", "pydevd", "trace"):
-        if m in sys.modules:
-            print("⛔ Outil de debug détecté")
-            sys.exit(1)
-
-# ================= ANTI COPY =================
-def anti_copy():
-    files = set(os.listdir("."))
-    if not EXPECTED_FILES.issubset(files):
-        print("⛔ Environnement invalide")
-        sys.exit(1)
-
-# ================= MACHINE ID =================
-def get_machine_id():
-    try:
-        data = os.popen("uname -a").read().strip()
-    except:
-        data = os.getenv("COMPUTERNAME", "unknown")
-    return hashlib.sha256(data.encode()).hexdigest()
 
 # ================= URLS =================
 def version_url():
     return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/version.json"
 
-def license_url(mid):
-    return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/licenses/{mid}.json"
-
-def update_url():
+def update_file_url():
     return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/update/smmkingdom.enc"
 
-# ================= NETWORK =================
-def fetch_json(url):
+def license_url(machine_id):
+    return f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/{BRANCH}/licenses/{machine_id}.json"
+
+# ================= MACHINE ID =================
+def get_machine_id():
+    data = os.popen("uname -a").read().strip()
+    return hashlib.sha256(data.encode()).hexdigest()
+
+def show_machine_id(machine_id):
+    print("\n" + "=" * 60)
+    print("🖥 IDENTIFIANT UNIQUE DE CETTE MACHINE")
+    print("-" * 60)
+    print(machine_id)
+    print("-" * 60)
+    print("📩 Envoyez cet ID à votre fournisseur")
+    print("=" * 60 + "\n")
+
+# ================= LOAD REMOTE =================
+def load_remote_version():
     try:
-        with urllib.request.urlopen(url, timeout=10) as r:
+        with urllib.request.urlopen(version_url(), timeout=10) as r:
             return json.loads(r.read().decode())
     except:
         return None
 
-# ================= LICENSE =================
+def load_remote_license(machine_id):
+    try:
+        with urllib.request.urlopen(license_url(machine_id), timeout=10) as r:
+            return json.loads(r.read().decode())
+    except:
+        return None
+
+# ================= UPDATE BOT =================
+def download_update():
+    print("⬇️ Téléchargement mise à jour du bot...")
+    try:
+        with urllib.request.urlopen(update_file_url(), timeout=30) as r:
+            with open("smmkingdom.enc.new", "wb") as f:
+                shutil.copyfileobj(r, f)
+
+        if os.path.exists("smmkingdom.enc"):
+            os.remove("smmkingdom.enc")
+
+        os.rename("smmkingdom.enc.new", "smmkingdom.enc")
+        print("✔ Mise à jour installée")
+        return True
+    except Exception as e:
+        print("❌ Erreur mise à jour :", e)
+        return False
+
+# ================= LICENSE CHECK =================
 def check_license():
     print("🔍 Vérification licence...")
+    machine_id = get_machine_id()
+    show_machine_id(machine_id)
 
-    mid = get_machine_id()
-    print("🖥 Machine ID :", mid)
+    lic = load_remote_license(machine_id)
 
-    lic = fetch_json(license_url(mid))
     if not lic:
-        print("❌ Licence absente")
+        print("❌ Aucune licence trouvée")
         sys.exit(1)
 
     if lic.get("status") != "active":
@@ -80,66 +94,44 @@ def check_license():
 
     print("✔ LICENCE VALIDE")
 
-# ================= UPDATE =================
+# ================= VERSION CHECK =================
 def check_update():
-    data = fetch_json(version_url())
-    if not data:
-        print("⚠️ Update non vérifiable")
+    print("🔎 Vérification des mises à jour...")
+
+    remote = load_remote_version()
+    if not remote:
+        print("⚠️ Impossible de vérifier la version")
         return True
 
-    if data["version"] == LOCAL_VERSION:
-        print("✔ Version à jour")
-        return True
-
-    if data.get("mandatory"):
-        print("⬇️ Mise à jour obligatoire...")
-        return download_update()
-    if data.get("loader_update"):
+    # ===== ÉTAPE 3 : UPDATE LOADER =====
+    if remote.get("loader_update"):
         print("⛔ Mise à jour du loader requise")
         print("➡️ Lancement de la mise à jour...")
         os.system("python update_loader.py")
         sys.exit(0)
 
-    return True
+    remote_version = remote.get("version")
 
-def download_update():
-    try:
-        with urllib.request.urlopen(update_url(), timeout=30) as r:
-            with open("smmkingdom.enc.new", "wb") as f:
-                shutil.copyfileobj(r, f)
-
-        os.replace("smmkingdom.enc.new", ENC_FILE)
-        print("✔ Mise à jour installée")
+    if remote_version == LOCAL_VERSION:
+        print("✔ Version à jour")
         return True
-    except:
-        print("❌ Échec mise à jour")
-        return False
 
-# ================= RUN ENC =================
-def run_enc():
-    key = hashlib.sha256(SECRET).digest()
+    print("🆕 Nouvelle version du bot disponible")
+    return download_update()
 
-    with open(ENC_FILE, "rb") as f:
-        nonce = f.read(16)
-        tag = f.read(16)
-        code = f.read()
-
-    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
-    source = cipher.decrypt_and_verify(code, tag)
-
-    exec(source, {"__name__": "__main__"})
-
-# ================= MAIN =================
-def main():
-    anti_debug()
-    anti_copy()
+# ================= RUN =================
+def run():
     check_license()
-
     if not check_update():
         sys.exit(1)
 
-    print("🚀 Accès autorisé")
-    run_enc()
+    if not os.path.exists("smmkingdom.enc"):
+        print("⚠️ Bot manquant → téléchargement")
+        if not download_update():
+            sys.exit(1)
+
+    print("🚀 Lancement SMMKINGDOM...")
+    os.system("python smmkingdom.enc")
 
 if __name__ == "__main__":
-    main()
+    run()
