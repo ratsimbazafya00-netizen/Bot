@@ -7,6 +7,9 @@ import os
 import sys
 import urllib.request
 import shutil
+import base64
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
 
 # ================= CONFIG =================
 GITHUB_USER = "ratsimbazafya00-netizen"
@@ -14,7 +17,12 @@ REPO_NAME = "Bot"
 BRANCH = "main"
 
 LOADER_VERSION = "1.1.0"
-LOCAL_VERSION = "1.1.0"
+LOCAL_VERSION  = "1.1.0"
+
+# ================= CRYPTO =================
+SECRET_B64 = "YTkxZjNjOWUwZjhjMWIyZC4uLg=="
+KEY = hashlib.sha256(base64.b64decode(SECRET_B64)).digest()
+IV  = b"SMMKINGDOM_16_IV"                               # 16 bytes AES
 
 # ================= URLS =================
 def version_url():
@@ -31,10 +39,10 @@ def get_machine_id():
     data = os.popen("uname -a").read().strip()
     return hashlib.sha256(data.encode()).hexdigest()
 
-def show_machine_id(machine_id):
+def show_machine_id(mid):
     print("\n" + "=" * 60)
     print("🖥 IDENTIFIANT UNIQUE DE CETTE MACHINE")
-    print(machine_id)
+    print(mid)
     print("📩 Envoyez cet ID à votre fournisseur")
     print("=" * 60 + "\n")
 
@@ -46,9 +54,9 @@ def load_remote_version():
     except:
         return None
 
-def load_remote_license(machine_id):
+def load_remote_license(mid):
     try:
-        with urllib.request.urlopen(license_url(machine_id), timeout=10) as r:
+        with urllib.request.urlopen(license_url(mid), timeout=10) as r:
             return json.loads(r.read().decode())
     except:
         return None
@@ -58,13 +66,8 @@ def download_update():
     print("⬇️ Téléchargement mise à jour du bot...")
     try:
         with urllib.request.urlopen(update_file_url(), timeout=30) as r:
-            with open("smmkingdom.enc.new", "wb") as f:
+            with open("smmkingdom.enc", "wb") as f:
                 shutil.copyfileobj(r, f)
-
-        if os.path.exists("smmkingdom.enc"):
-            os.remove("smmkingdom.enc")
-
-        os.rename("smmkingdom.enc.new", "smmkingdom.enc")
         print("✔ Mise à jour bot installée")
         return True
     except Exception as e:
@@ -74,12 +77,11 @@ def download_update():
 # ================= LICENCE =================
 def check_license():
     print("🔍 Vérification licence...")
-    machine_id = get_machine_id()
-
-    lic = load_remote_license(machine_id)
+    mid = get_machine_id()
+    lic = load_remote_license(mid)
 
     if not lic:
-        show_machine_id(machine_id)
+        show_machine_id(mid)
         print("❌ Aucune licence trouvée")
         sys.exit(1)
 
@@ -96,19 +98,16 @@ def check_license():
 # ================= VERSION =================
 def check_update():
     print("🔎 Vérification des mises à jour...")
-
     remote = load_remote_version()
+
     if not remote:
         print("⚠️ Impossible de vérifier les mises à jour")
         return True
 
-    # 🔒 Loader
     if remote.get("loader_version") != LOADER_VERSION:
         print("⛔ Mise à jour du loader requise")
-        print("➡️ Relancez après mise à jour")
         sys.exit(0)
 
-    # 🔄 Bot
     if remote.get("version") == LOCAL_VERSION:
         print("✔ Version à jour")
         return True
@@ -119,7 +118,19 @@ def check_update():
 
     return True
 
-# ================= RUN =================
+# ================= RUN ENCRYPTED =================
+def run_encrypted():
+    with open("smmkingdom.enc", "rb") as f:
+        encrypted = base64.b64decode(f.read())
+
+    cipher = AES.new(KEY, AES.MODE_CBC, IV)
+    decrypted = unpad(cipher.decrypt(encrypted), AES.block_size)
+
+    code = decrypted.decode("utf-8")
+
+    exec(code, {"__name__": "__main__"})
+
+# ================= MAIN =================
 def run():
     check_license()
 
@@ -132,7 +143,7 @@ def run():
             sys.exit(1)
 
     print("🚀 Lancement SMMKINGDOM...")
-    os.system("python smmkingdom.enc")
+    run_encrypted()
 
 if __name__ == "__main__":
     run()
