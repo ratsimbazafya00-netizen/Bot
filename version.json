@@ -1,8 +1,9 @@
 {
   "version": "1.1.0",
-  "mandatory": true,
-  "message": "Nouvelle sécurité + mise à jour du loader",
   "loader_version": "1.1.0",
+  "mandatory": false,
+  "message": "Version stable"
 }
+
 
 
