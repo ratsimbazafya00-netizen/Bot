@@ -1,5 +1,6 @@
 print(">>> LOADER DÉMARRÉ <<<", flush=True)
 
+
 import json
 import time
 import hashlib
@@ -12,6 +13,7 @@ import shutil
 GITHUB_USER = "ratsimbazafya00-netizen"
 REPO_NAME = "Bot"
 BRANCH = "main"
+LOADER_VERSION = "1.0.0"
 
 LOCAL_VERSION = "1.1.0"
 
@@ -104,11 +106,16 @@ def check_update():
         return True
 
     # ===== ÉTAPE 3 : UPDATE LOADER =====
-    if remote.get("loader_update"):
-        print("⛔ Mise à jour du loader requise")
-        print("➡️ Lancement de la mise à jour...")
-        os.system("python update_loader.py")
-        sys.exit(0)
+    remote_loader_version = remote.get("loader_version")
+
+        if remote_loader_version and remote_loader_version != LOADER_VERSION:
+            print("⛔ Mise à jour du loader requise")
+            print(f"📦 Version locale : {LOADER_VERSION}")
+            print(f"📦 Nouvelle version : {remote_loader_version}")
+            print("➡️ Mise à jour en cours...")
+            os.system("python update_loader.py")
+            sys.exit(0)
+
 
     remote_version = remote.get("version")
 
@@ -135,4 +142,5 @@ def run():
 
 if __name__ == "__main__":
     run()
+
 
