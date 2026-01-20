@@ -13,7 +13,7 @@ import shutil
 GITHUB_USER = "ratsimbazafya00-netizen"
 REPO_NAME = "Bot"
 BRANCH = "main"
-LOADER_VERSION = "1.0.0"
+LOADER_VERSION = "1.1.0"
 
 LOCAL_VERSION = "1.1.0"
 
@@ -142,5 +142,6 @@ def run():
 
 if __name__ == "__main__":
     run()
+
 
 
